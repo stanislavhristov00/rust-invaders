@@ -3,6 +3,10 @@ use ggez::{graphics::{Image, Canvas, Rect, DrawParam}, glam::Vec2, GameError};
 const PLAYER_NUM_LIVES: u8 = 3;
 
 
+// TODO!: Extract all common methods in a trait..
+// TODO!: Make an entity for the walls..
+// TODO!: Make an entity for the big ship that is worth a 100 points..
+
 #[derive(Clone)]
 /*
  * Structure that will handle animation of entities.
@@ -96,6 +100,14 @@ impl Bullet {
 
    pub fn in_air(&self) -> bool {
       return self.in_air;
+   }
+
+   pub fn get_frame_dimensions(&self) -> Result<Vec2, GameError> {
+      self.sprite.get_frame_dimensions(0)
+   }
+
+   pub fn get_scale(&self) -> Vec2 {
+      Vec2 { x: self.dest_rect.h, y: self.dest_rect.w }
    }
 
    pub fn draw(&self, canvas: &mut Canvas, counter: u64,image: &Image) {
@@ -255,9 +267,14 @@ pub struct Player {
 
 impl Player {
    pub fn new(sprite_alive: Sprite, sprite_death: Sprite, bulletSprite: Sprite, dest_rect: Rect) -> Self {
+      let mut dest_rect_bullet = dest_rect.clone();
+      dest_rect_bullet.w /= 2.0;
+      dest_rect_bullet.h /= 2.0;
+
+
       Player { sprite_alive: sprite_alive,
                sprite_death: sprite_death,
-               bullet: Bullet { sprite: bulletSprite, dest_rect: dest_rect.clone(), in_air: false},
+               bullet: Bullet { sprite: bulletSprite, dest_rect: dest_rect_bullet, in_air: false},
                dest_rect: dest_rect,
                is_alive: true,
                lives: PLAYER_NUM_LIVES}
@@ -338,17 +355,23 @@ impl Player {
       self.sprite_alive.get_frame_dimensions(0)
    }
 
-   pub fn bullet_collision_with_enemy(&self, enemy: &Enemy, image_dimesnions: Vec2) -> bool {
+   pub fn bullet_collision_with_enemy(&self, enemy: &Enemy, image_dimensions: Vec2) -> bool {
       if self.bullet.in_air {
          let bullet_coords = self.bullet.get_coords();
+         let bullet_dim = self.bullet.get_frame_dimensions().unwrap();
+         let bullet_scale = self.bullet.get_scale();
+
          let enemy_coords = enemy.get_coords();
          let enemy_dim = enemy.get_frame_dimensions().unwrap();
+         let enemy_scaling = enemy.get_scale();
 
-         if bullet_coords.y < enemy_coords.y &&
-            bullet_coords.y > enemy_coords.y - enemy_dim.x * image_dimesnions.x {
-            if bullet_coords.x > enemy_coords.x - 10.0 &&
-               bullet_coords.x < enemy_coords.x + enemy_dim.y - 10.0 {
-
+         if bullet_coords.y <= enemy_coords.y + enemy_dim.x * image_dimensions.x * enemy_scaling.x {
+            if (bullet_coords.x >= enemy_coords.x &&
+               bullet_coords.x <= enemy_coords.x + enemy_dim.y * image_dimensions.y * enemy_scaling.y - 30.0)
+               ||
+               (bullet_coords.x + bullet_dim.y * image_dimensions.y * bullet_scale.y >= enemy_coords.x &&
+                bullet_coords.x + bullet_dim.y * image_dimensions.y * bullet_scale.y <= enemy_coords.x + enemy_dim.y * image_dimensions.y * enemy_scaling.y - 30.0)
+            {
                return true;
             }
          }

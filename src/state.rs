@@ -63,6 +63,10 @@ impl State {
       true
    }
 
+   pub fn revive_player(&mut self, position: Vec2) {
+      self.player.revive(position);
+   }
+
    pub fn draw_player(&mut self, canvas: &mut Canvas, count: u64, image: &Image) {
       if self.player.is_alive() {
          self.player.draw(canvas, count, image);
@@ -200,26 +204,15 @@ impl State {
       self.player.shoot();
    }
 
-   pub fn enemy_shoot(&mut self, index: usize) {
-      if index > self.enemies.len() {
-         eprintln!("Out of bounds for enemy vector in enemy_shoot, passed: {}, max {}", index, self.enemies.len() - 1);
-      } else {
-         let enemy = self.enemies.as_mut_slice().get_mut(index).unwrap();
-         if enemy.is_alive() {
-            enemy.shoot();
-         }
-      }
-   }
-
    pub fn is_player_alive(&self) -> bool {
       self.player.is_alive()
    }
 
    pub fn update(&mut self, x: f32, image_dimensions: Vec2, scaled: bool, count: u64) {
-      self.player.update(3.0, image_dimensions, count, scaled);
+      self.player.update(9.0, image_dimensions, count, scaled);
 
       for enemy in self.enemies.as_mut_slice() {
-         enemy.update(3.0, WINDOW_SIZE_HEIGHT, image_dimensions, count, scaled);
+         enemy.update(6.0, WINDOW_SIZE_HEIGHT, image_dimensions, count, scaled);
       }
 
       self.move_enemies(WINDOW_SIZE_WIDTH, scaled, image_dimensions);
@@ -228,6 +221,10 @@ impl State {
 
    pub fn get_player_lives(&self) -> u8 {
       self.player.get_lives()
+   }
+
+   pub fn get_enemies(&self) -> Vec<Enemy> {
+      self.enemies.clone()
    }
 }
 

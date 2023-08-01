@@ -30,7 +30,8 @@ struct MainState{
     score: u64,
     high_score: u64,
     sprite_sheet: Image,
-    score_file: String
+    score_file: String,
+    player_starting_coords: Vec2
 }
 
 impl MainState {
@@ -40,6 +41,8 @@ impl MainState {
         let mut high_score = 0;
         if score_file_path.exists() {
             let high_score_string = fs::read_to_string(score_file_path);
+
+
             if let Err(err) = high_score_string {
                 println!("Failed to read file {}", score_file);
             } else {
@@ -84,6 +87,8 @@ impl MainState {
                                                     WINDOW_SIZE_WIDTH,
                                                     WINDOW_SIZE_HEIGHT);
 
+        let starting_coords = player.get_coords();
+
         MainState {
             count: 0,
             state: Box::new( State::new(21, enemies.clone(), player.clone())),
@@ -93,7 +98,8 @@ impl MainState {
             score: 0,
             high_score: high_score,
             sprite_sheet: sprite_sheet,
-            score_file: String::from(score_file)
+            score_file: String::from(score_file),
+            player_starting_coords: starting_coords
         }
     }
 }
@@ -186,8 +192,6 @@ impl event::EventHandler for MainState {
             self.is_game_over = !self.state.is_player_alive();
             self.state.check_if_enemy_shot_player(image_dimensions.clone());
 
-
-
             if self.state.check_if_player_shot_enemy(image_dimensions.clone()) {
                 self.score += 10;
             }
@@ -197,28 +201,18 @@ impl event::EventHandler for MainState {
             }
 
             let direction = input::update_movement(ctx);
-
-            // if direction != 0 {
-            //     self.state.move_player(6.0 * direction as f32,
-            //                            WINDOW_SIZE_WIDTH,
-            //                            image_dimensions.clone(),
-            //                            true /* scaled */);
-            // }
-
-            // self.state.move_enemies(WINDOW_SIZE_WIDTH, true, image_dimensions.clone());
-
             self.state.update(6.0 * direction as f32, image_dimensions, true, self.count);
 
             self.state.enemies_shoot();
 
-            // if self.state.all_enemies_dead() {
-            //     todo!();
-            // }
+            if self.state.all_enemies_dead() {
+                self.load_next_wave(1);
+            }
 
         } else {
-
+            self.restart(ctx);
         }
-        // Променяме състоянието на играта
+
         Ok(())
     }
 
@@ -226,19 +220,68 @@ impl event::EventHandler for MainState {
         let black = graphics::Color::from_rgb(0, 0, 0);
         let mut canvas = graphics::Canvas::from_frame(ctx, black);
 
-        if self.is_on_starting_screen {
-
-        } else if !self.is_game_over {
+        if !self.is_game_over && !self.is_on_starting_screen {
             self.state.draw_enemies(&mut canvas, self.count, &self.sprite_sheet);
             self.state.draw_player(&mut canvas, self.count, &self.sprite_sheet);
-        } else {
-
         }
-
         self.draw_text(&mut canvas, ctx, self.is_game_over, self.is_on_starting_screen);
 
         canvas.finish(ctx)?;
         Ok(())
+    }
+}
+
+impl MainState {
+    pub fn write_high_score(&self) {
+        let path = Path::new(self.score_file.as_str());
+
+        if path.exists() {
+            let mut file = OpenOptions::new()
+                           .write(true)
+                           .open(path).unwrap();
+
+            let result = file.write(self.high_score.to_string().as_bytes());
+
+            if let Err(err) = result {
+                eprintln!("Failed to write high score: {}", err.to_string());
+            }
+
+            // if let Err(err) = file {
+            //     eprintln!("Failed to open file {}, reason: {}", path.as_os_str().to_str().unwrap(), err.to_string());
+            // } else {
+            //     // file.unwrap().write(self.high_score.to_string().as_bytes());;
+            //     file = file.unwrap();
+
+
+            }
+            // let err = fs::write(path, self.high_score.to_string());
+            // println!("{}", path.as_os_str().to_str().unwrap());
+            // if let Err(e) = err {
+            //     eprint!("Couldn't write high score to file: {}", e.to_string());
+            // }
+        }
+
+    pub fn restart(&mut self, ctx: &mut Context) {
+        if input::is_space_pressed(ctx) {
+            self.state.set_enemies(self.state_copy.get_enemies());
+            self.state.revive_player(self.player_starting_coords);
+            state::reset_enemy_movement_speed();
+            state::set_enemy_direction_right();
+            if self.score > self.high_score {
+                self.high_score = self.score;
+                self.write_high_score();
+            }
+
+            self.count = 0;
+            self.score = 0;
+            self.is_game_over = false
+        }
+    }
+
+    pub fn load_next_wave(&mut self, enemy_speed: u8) {
+        self.state.set_enemies(self.state_copy.get_enemies());
+        state::set_enemy_direction_right();
+        state::increase_enemy_movement_speed(enemy_speed);
     }
 }
 
@@ -280,7 +323,7 @@ pub fn main() {
     init::init_font(&mut ctx, "/font.TTF");
 
     let mut high_score_file_path = String::from(resource_dir.into_os_string().to_str().unwrap());
-    high_score_file_path += "/.high_score.txt";
+    high_score_file_path += format!("{}.high_score.txt", MAIN_SEPARATOR).as_str();
 
     // Пускане на главния loop
     let state = MainState::new(&mut ctx, image.unwrap(), high_score_file_path.as_str());
