@@ -239,13 +239,39 @@ impl Enemy {
    pub fn bullet_collision_with_player(&self, player: &Player, image_dimensions: Vec2) -> bool {
       if self.bullet.in_air() {
          let bullet_coords = self.bullet.get_coords();
+         let bullet_dim = self.bullet.get_frame_dimensions().unwrap();
+         let bullet_scale = self.bullet.get_scale();
+
          let player_coords = player.get_coords();
+         let player_dim = player.get_frame_dimensions().unwrap();
+         let player_scaling = player.get_scale();
 
-         let player_dimensions = player.get_frame_dimensions().unwrap();
+         // if bullet_coords.y >= player_coords.y - 10.0 {
+         //    if bullet_coords.x >= player_coords.x - 10.0 &&
+         //       bullet_coords.x <= player_coords.x + player_dimensions.y * image_dimensions.y - 10.0 {
+         //       return true;
+         //    }
+         // }
 
-         if bullet_coords.y > player_coords.y - 10.0 {
-            if bullet_coords.x > player_coords.x - 10.0 &&
-               bullet_coords.x < player_coords.x + player_dimensions.y * image_dimensions.y - 10.0 {
+         // if bullet_coords.y <= player_coords.y + player_dim.x * image_dimensions.x * player_scaling.x &&
+         //    bullet_coords.y * bullet_dim.x * image_dimensions.x * bullet_scale.x >= player_coords.y + player_dim.x * image_dimensions.x * player_scaling.x {
+         //    if (bullet_coords.x + 10.0 >= player_coords.x &&
+         //       bullet_coords.x + 10.0 <= player_coords.x + player_dim.y * image_dimensions.y * player_scaling.y - 30.0)
+         //       ||
+         //       (bullet_coords.x + bullet_dim.y * image_dimensions.y * bullet_scale.y >= player_coords.x &&
+         //        bullet_coords.x + bullet_dim.y * image_dimensions.y * bullet_scale.y <= player_coords.x + player_dim.y * image_dimensions.y * player_scaling.y - 30.0)
+         //    {
+         //       return true;
+         //    }
+         // }
+
+         if bullet_coords.y >= player_coords.y && bullet_coords.y + bullet_dim.x * image_dimensions.x * bullet_scale.x >= player_coords.y {
+            if (bullet_coords.x + 10.0 >= player_coords.x &&
+               bullet_coords.x + 10.0 <= player_coords.x + player_dim.y * image_dimensions.y * player_scaling.y - 30.0)
+               ||
+               (bullet_coords.x + bullet_dim.y * image_dimensions.y * bullet_scale.y >= player_coords.x &&
+                bullet_coords.x + bullet_dim.y * image_dimensions.y * bullet_scale.y <= player_coords.x + player_dim.y * image_dimensions.y * player_scaling.y - 30.0)
+            {
                return true;
             }
          }
@@ -365,9 +391,10 @@ impl Player {
          let enemy_dim = enemy.get_frame_dimensions().unwrap();
          let enemy_scaling = enemy.get_scale();
 
-         if bullet_coords.y <= enemy_coords.y + enemy_dim.x * image_dimensions.x * enemy_scaling.x {
-            if (bullet_coords.x >= enemy_coords.x &&
-               bullet_coords.x <= enemy_coords.x + enemy_dim.y * image_dimensions.y * enemy_scaling.y - 30.0)
+         if bullet_coords.y <= enemy_coords.y + enemy_dim.x * image_dimensions.x * enemy_scaling.x &&
+            bullet_coords.y * bullet_dim.x * image_dimensions.x * bullet_scale.x >= enemy_coords.y + enemy_dim.x * image_dimensions.x * enemy_scaling.x {
+            if (bullet_coords.x + 10.0 >= enemy_coords.x &&
+               bullet_coords.x + 10.0 <= enemy_coords.x + enemy_dim.y * image_dimensions.y * enemy_scaling.y - 30.0)
                ||
                (bullet_coords.x + bullet_dim.y * image_dimensions.y * bullet_scale.y >= enemy_coords.x &&
                 bullet_coords.x + bullet_dim.y * image_dimensions.y * bullet_scale.y <= enemy_coords.x + enemy_dim.y * image_dimensions.y * enemy_scaling.y - 30.0)
