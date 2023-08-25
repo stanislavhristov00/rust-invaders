@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use ggez::{graphics::{Image, Canvas, Rect, DrawParam}, glam::Vec2, GameError};
 
 const PLAYER_NUM_LIVES: u8 = 3;
@@ -8,6 +10,7 @@ const PLAYER_NUM_LIVES: u8 = 3;
 // TODO!: Make an entity for the big ship that is worth a 100 points..
 
 #[derive(Clone)]
+#[allow(dead_code)]
 /*
  * Structure that will handle animation of entities.
  */
@@ -15,31 +18,31 @@ pub struct Sprite {
    // Use Vec<> instead of InstanceArray here, since Vec implements the Clone
    // trait and InstanceArray doesn't.
 
-   animationFrames: Vec<DrawParam>,
+   animation_frames: Vec<DrawParam>,
 }
 
 impl Sprite {
-   pub fn new(animationFrames: Vec<DrawParam>) -> Self {
+   pub fn new(animation_frames: Vec<DrawParam>) -> Self {
       Sprite {
-         animationFrames: animationFrames
+         animation_frames: animation_frames
       }
    }
 
    pub fn draw(&self, canvas: &mut Canvas, counter: u64, dest_rect: Rect, image: &Image) {
-      if self.animationFrames.len() == 0 {
-         canvas.draw(image, self.animationFrames[0].dest_rect(dest_rect));
+      if self.animation_frames.len() == 0 {
+         canvas.draw(image, self.animation_frames[0].dest_rect(dest_rect));
       } else {
-         let frameIndex: usize = (counter as usize / 20) % self.animationFrames.len();
-         canvas.draw(image, self.animationFrames[frameIndex].dest_rect(dest_rect));
+         let frame_index: usize = (counter as usize / 20) % self.animation_frames.len();
+         canvas.draw(image, self.animation_frames[frame_index].dest_rect(dest_rect));
       }
    }
 
    pub fn get_frame_dimensions(&self, index: usize) -> Result<Vec2, GameError> {
-      if index >= self.animationFrames.len() {
+      if index >= self.animation_frames.len() {
          return Err(GameError::CustomError(String::from("Invalid index passed to get_frame_dimensions")));
       }
 
-      Ok(Vec2 { x: self.animationFrames[index].src.h, y: self.animationFrames[index].src.w })
+      Ok(Vec2 { x: self.animation_frames[index].src.h, y: self.animation_frames[index].src.w })
    }
 }
 
@@ -126,10 +129,10 @@ pub struct Enemy {
 }
 
 impl Enemy {
-   pub fn new(sprite_alive: Sprite, sprite_death: Sprite, bulletSprite: Sprite, dest_rect: Rect) -> Self {
+   pub fn new(sprite_alive: Sprite, sprite_death: Sprite, bullet_sprite: Sprite, dest_rect: Rect) -> Self {
       Enemy { sprite_alive: sprite_alive,
               sprite_death: sprite_death,
-              bullet: Bullet { sprite: bulletSprite, dest_rect: dest_rect.clone(), in_air: false},
+              bullet: Bullet { sprite: bullet_sprite, dest_rect: dest_rect.clone(), in_air: false},
               dest_rect: dest_rect,
               is_alive: true,
               death_animation_drawn: false }
@@ -139,7 +142,7 @@ impl Enemy {
       self.bullet.set_in_air(true);
    }
 
-   pub fn update(&mut self, speed_y: f32, screen_height: f32, image_dimensions: Vec2, count: u64, scaled: bool) {
+   pub fn update(&mut self, speed_y: f32, screen_height: f32, scaled: bool) {
       if self.bullet.in_air() {
          self.bullet.translate(Vec2 { x: 0.0, y: speed_y }, scaled);
 
@@ -148,13 +151,6 @@ impl Enemy {
          }
       } else {
          if self.is_alive {
-            // Get on which frame we're currently
-            let frame_index: usize = (count as usize / 20) % self.sprite_alive.animationFrames.len();
-            let frame_dim = self.sprite_alive.get_frame_dimensions(frame_index).unwrap();
-
-            // Calculate the offsets
-            // let height_offset = image_dimensions.x as f32 * frame_dim.x;
-            // let width_offset = image_dimensions.y as f32 * frame_dim.y;
             self.bullet.set_bullet_coords(Vec2::new(
                                           self.dest_rect.x, //+ width_offset,
                                           self.dest_rect.y)); //+ height_offset));
@@ -163,8 +159,6 @@ impl Enemy {
    }
 
    pub fn draw(&mut self, canvas: &mut Canvas, count: u64, image: &Image) {
-      let screen_coords = canvas.screen_coordinates().unwrap();
-
       if self.bullet.in_air() {
         self.bullet.draw(canvas, count, image);
       }
@@ -292,7 +286,7 @@ pub struct Player {
 }
 
 impl Player {
-   pub fn new(sprite_alive: Sprite, sprite_death: Sprite, bulletSprite: Sprite, dest_rect: Rect) -> Self {
+   pub fn new(sprite_alive: Sprite, sprite_death: Sprite, bullet_sprite: Sprite, dest_rect: Rect) -> Self {
       let mut dest_rect_bullet = dest_rect.clone();
       dest_rect_bullet.w /= 2.0;
       dest_rect_bullet.h /= 2.0;
@@ -300,7 +294,7 @@ impl Player {
 
       Player { sprite_alive: sprite_alive,
                sprite_death: sprite_death,
-               bullet: Bullet { sprite: bulletSprite, dest_rect: dest_rect_bullet, in_air: false},
+               bullet: Bullet { sprite: bullet_sprite, dest_rect: dest_rect_bullet, in_air: false},
                dest_rect: dest_rect,
                is_alive: true,
                lives: PLAYER_NUM_LIVES}
@@ -313,7 +307,7 @@ impl Player {
    /*
     * TODO!. Refer to the translate method for the explanation of scaled.
     */
-   pub fn update(&mut self, speed_y: f32, imageDimensions: Vec2, count: u64, scaled: bool) {
+   pub fn update(&mut self, speed_y: f32, scaled: bool) {
       if self.bullet.in_air() {
          self.bullet.translate(Vec2 { x: 0.0, y: -speed_y }, scaled);
 
@@ -330,8 +324,6 @@ impl Player {
    }
 
    pub fn draw(&mut self, canvas: &mut Canvas, count: u64, image: &Image) {
-      let screen_coords = canvas.screen_coordinates().unwrap();
-
       if self.bullet.in_air() {
         self.bullet.draw(canvas, count, image);
       }

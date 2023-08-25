@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::WINDOW_SIZE_WIDTH;
 use crate::WINDOW_SIZE_HEIGHT;
 use crate::entities;
@@ -155,22 +157,22 @@ impl State {
          return;
       }
 
-      let mut enemies_to_shoot: u16 = 0;
+      let mut _enemies_to_shoot: u16 = 0;
 
       // These values can be played around with :)
       if enemies_alive.len() > 20 {
-         enemies_to_shoot = 5;
+         _enemies_to_shoot = 5;
       } else {
-         enemies_to_shoot = 3;
+         _enemies_to_shoot = 3;
       }
 
-      for i in 0..enemies_to_shoot {
-         let mut index = rand::thread_rng().gen_range(0..enemies_to_shoot);
+      for _ in 0.._enemies_to_shoot {
+         let mut index = rand::thread_rng().gen_range(0.._enemies_to_shoot);
 
          let mut enemy = &mut self.enemies.as_mut_slice()[index as usize];
 
          if enemy.is_bullet_in_air() {
-            index = rand::thread_rng().gen_range(0..enemies_to_shoot);
+            index = rand::thread_rng().gen_range(0.._enemies_to_shoot);
 
             enemy = &mut self.enemies.as_mut_slice()[index as usize];
             if enemy.is_bullet_in_air() {
@@ -208,11 +210,11 @@ impl State {
       self.player.is_alive()
    }
 
-   pub fn update(&mut self, x: f32, image_dimensions: Vec2, scaled: bool, count: u64) {
-      self.player.update(9.0, image_dimensions, count, scaled);
+   pub fn update(&mut self, x: f32, image_dimensions: Vec2, scaled: bool) {
+      self.player.update(9.0, scaled);
 
       for enemy in self.enemies.as_mut_slice() {
-         enemy.update(6.0, WINDOW_SIZE_HEIGHT, image_dimensions, count, scaled);
+         enemy.update(6.0, WINDOW_SIZE_HEIGHT, scaled);
       }
 
       self.move_enemies(WINDOW_SIZE_WIDTH, scaled, image_dimensions);

@@ -6,15 +6,14 @@ mod init;
 use std::path::{MAIN_SEPARATOR, Path};
 use std::{env, path, fs};
 
-use entities::{Enemy, Player};
 use ggez::glam::Vec2;
 use ggez::{Context, GameResult};
-use ggez::graphics::{self, Image, DrawParam, Rect, Canvas, Drawable};
+use ggez::graphics::{self, Image, DrawParam, Canvas, Drawable};
 use ggez::event::{self};
 use ggez::conf::{Conf, WindowMode};
 use state::State;
-use std::fs::{File, OpenOptions};
-use std::io::{prelude::*, Error};
+use std::fs::{OpenOptions};
+use std::io::{prelude::*};
 use std::os::windows::prelude::*;
 use winapi::um::winnt::FILE_ATTRIBUTE_HIDDEN;
 
@@ -44,7 +43,7 @@ impl MainState {
 
 
             if let Err(err) = high_score_string {
-                println!("Failed to read file {}", score_file);
+                println!("Failed to read file {}: {}", score_file, err.to_string());
             } else {
                 match high_score_string.unwrap().parse::<u64>() {
                     Err(err) => { println!("Failed to parse high score? {}", err) },
@@ -201,7 +200,7 @@ impl event::EventHandler for MainState {
             }
 
             let direction = input::update_movement(ctx);
-            self.state.update(6.0 * direction as f32, image_dimensions, true, self.count);
+            self.state.update(6.0 * direction as f32, image_dimensions, true);
 
             self.state.enemies_shoot();
 
